@@ -7,7 +7,7 @@ configure_file (generated_custom.h.cmake.in generated_custom.h)
 
 include_directories (${CMAKE_CURRENT_BINARY_DIR})
 
-add_library (ardrone_tool
+add_library (ardrone_tool STATIC
   ARDroneLib/Soft/Lib/ardrone_tool/AT/ardrone_at_mutex.c
   ARDroneLib/Soft/Lib/ardrone_tool/Academy/academy.c
   ARDroneLib/Soft/Lib/ardrone_tool/Academy/academy.h
