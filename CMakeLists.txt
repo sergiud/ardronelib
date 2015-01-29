@@ -1,7 +1,10 @@
 cmake_minimum_required (VERSION 2.8.11)
 project (ARDroneSDK C)
 
+list (APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+
 find_package (Threads REQUIRED)
+find_package (FFmpeg REQUIRED avcodec avformat avutil swscale)
 
 configure_file (generated_custom.h.cmake.in generated_custom.h)
 
@@ -84,7 +87,8 @@ add_library (ardrone_tool STATIC
   ARDroneLib/Soft/Lib/ardrone_tool/config_keys.c
 )
 
-target_link_libraries (ardrone_tool PUBLIC Soft iniparser avcodec avutil swscale avformat)
+target_include_directories (ardrone_tool PUBLIC ${FFMPEG_INCLUDE_DIRS})
+target_link_libraries (ardrone_tool PUBLIC Soft iniparser ${FFMPEG_LIBRARIES})
 set_property (TARGET ardrone_tool APPEND PROPERTY INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/ARDroneLib/Soft/Lib)
 
 add_library (iniparser
