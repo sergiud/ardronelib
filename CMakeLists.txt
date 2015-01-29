@@ -6,6 +6,22 @@ list (APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 find_package (Threads REQUIRED)
 find_package (FFmpeg REQUIRED avcodec avformat avutil swscale)
 
+set (MAJOR_VERSION 2)
+set (MINOR_VERSION 0)
+set (VERSION_PATCH 1)
+
+set (VERSION "${MAJOR_VERSION}.${MINOR_VERSION}.${VERSION_PATCH}")
+
+set (CPACK_PACKAGE_NAME ARDroneSDK)
+set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "AR.Drone 1.0/2.0 Software Development Kit")
+set (CPACK_PACKAGE_VERSION_MAJOR ${MAJOR_VERSION})
+set (CPACK_PACKAGE_VERSION_MINOR ${MINOR_VERSION})
+set (CPACK_PACKAGE_VERSION_PATCH ${VERSION_PATCH})
+set (CPACK_PACKAGE_VERSION ${SHORT_VERSION})
+set (CPACK_PACKAGE_CONTACT "sergiu.dotenco@gmail.com")
+
+include (CPack)
+
 configure_file (generated_custom.h.cmake.in generated_custom.h)
 
 include_directories (${CMAKE_CURRENT_BINARY_DIR})
