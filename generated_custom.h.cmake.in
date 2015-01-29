@@ -1,0 +1,29 @@
+#ifndef _GENERATED_CUSTOM_CONFIGURATION_H_
+#define _GENERATED_CUSTOM_CONFIGURATION_H_
+
+#if  defined(BR2_PACKAGE_BCM4318_AP)
+#  define AP
+#else
+#  define STA
+#endif
+
+#define CURRENT_NUM_VERSION_SOFT "@MAJOR_VERSION@.@MINOR_VERSION@.@MODIF_VERSION"
+#define CURRENT_BUILD_DATE "@CURRENT_BUILD_DATE@"
+
+#cmakedefine USE_VIDEO_YUV
+#cmakedefine RECORD_VISION_DATA
+
+#define WIFI_NETWORK_NAME "@WIFI_NETWORK_NAME@"
+#define WIFI_BROADCAST "@WIFI_BROADCAST@"
+#define WIFI_ARDRONE_IP "@WIFI_ARDRONE_IP@"
+
+#if defined(__linux__) || defined(USE_MINGW32)
+# define WIFI_MOBILE_IP "@WIFI_MOBILE_IP@"
+# define WIRED_ITFNAME "@WIRED_ITFNAME@"
+#endif /* ! __linux__ */
+
+#endif /* ! _GENERATED_CUSTOM_CONFIGURATION_H_ */
+
+/*
+ * vim: ft=c
+ */

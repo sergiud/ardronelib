@@ -111,25 +111,22 @@ const vp_api_stage_funcs_t ffmpeg_decoding_funcs = {
 C_RESULT ffmpeg_stage_decoding_open(ffmpeg_stage_decoding_config_t *cfg)
 {
   cfg->num_picture_decoded = 0;
-  
-  /* must be called before using avcodec lib */
-  avcodec_init();
-  
+
   /* register all the codecs */
   avcodec_register_all();
-  
+
   av_log_set_level(FFMPEG_LOG_LEVEL);
 
   cfg->pCodecMP4 = avcodec_find_decoder (CODEC_ID_MPEG4);
   cfg->pCodecH264 = avcodec_find_decoder (CODEC_ID_H264);
-  if(NULL == cfg->pCodecMP4 || NULL == cfg->pCodecH264) 
+  if(NULL == cfg->pCodecMP4 || NULL == cfg->pCodecH264)
     {
       fprintf(stderr, "Unsupported codec!\n");
       return C_FAIL; // Codec not found
     }
 
-  cfg->pCodecCtxMP4 = avcodec_alloc_context();
-  cfg->pCodecCtxH264 = avcodec_alloc_context();
+  cfg->pCodecCtxMP4 = avcodec_alloc_context3(cfg->pCodecMP4);
+  cfg->pCodecCtxH264 = avcodec_alloc_context3(cfg->pCodecH264);
   if (NULL == cfg->pCodecCtxMP4 || NULL == cfg->pCodecCtxH264)
     {
       fprintf(stderr, "Impossible to allocate codec context\n");
@@ -139,30 +136,30 @@ C_RESULT ffmpeg_stage_decoding_open(ffmpeg_stage_decoding_config_t *cfg)
   cfg->pCodecCtxMP4->pix_fmt = PIX_FMT_YUV420P;
   cfg->pCodecCtxMP4->skip_frame = AVDISCARD_DEFAULT;
   cfg->pCodecCtxMP4->error_concealment = FF_EC_GUESS_MVS | FF_EC_DEBLOCK;
-  cfg->pCodecCtxMP4->error_recognition = FF_ER_CAREFUL;
+  cfg->pCodecCtxMP4->err_recognition = AV_EF_CRCCHECK;
   cfg->pCodecCtxMP4->skip_loop_filter = AVDISCARD_DEFAULT;
   cfg->pCodecCtxMP4->workaround_bugs = FF_BUG_AUTODETECT;
   cfg->pCodecCtxMP4->codec_type = AVMEDIA_TYPE_VIDEO;
   cfg->pCodecCtxMP4->codec_id = CODEC_ID_MPEG4;
   cfg->pCodecCtxMP4->skip_idct = AVDISCARD_DEFAULT;
-  
+
   cfg->pCodecCtxH264->pix_fmt = PIX_FMT_YUV420P;
   cfg->pCodecCtxH264->skip_frame = AVDISCARD_DEFAULT;
   cfg->pCodecCtxH264->error_concealment = FF_EC_GUESS_MVS | FF_EC_DEBLOCK;
-  cfg->pCodecCtxH264->error_recognition = FF_ER_CAREFUL;
+  cfg->pCodecCtxH264->err_recognition = AV_EF_CRCCHECK;
   cfg->pCodecCtxH264->skip_loop_filter = AVDISCARD_DEFAULT;
   cfg->pCodecCtxH264->workaround_bugs = FF_BUG_AUTODETECT;
   cfg->pCodecCtxH264->codec_type = AVMEDIA_TYPE_VIDEO;
   cfg->pCodecCtxH264->codec_id = CODEC_ID_H264;
   cfg->pCodecCtxH264->skip_idct = AVDISCARD_DEFAULT;
-  		
+
   // Open codec
-  if(avcodec_open(cfg->pCodecCtxMP4, cfg->pCodecMP4) < 0)
+  if(avcodec_open2(cfg->pCodecCtxMP4, cfg->pCodecMP4, NULL) < 0)
     {
       fprintf (stderr, "Error opening MP4 codec\n");
       return C_FAIL;
     }
-  if(avcodec_open(cfg->pCodecCtxH264, cfg->pCodecH264) < 0)
+  if(avcodec_open2(cfg->pCodecCtxH264, cfg->pCodecH264, NULL) < 0)
     {
       fprintf (stderr, "Error opening h264 codec\n");
       return C_FAIL;
@@ -184,7 +181,7 @@ C_RESULT ffmpeg_stage_decoding_open(ffmpeg_stage_decoding_config_t *cfg)
     }
   cfg->buffer = NULL;
   cfg->img_convert_ctx = NULL;
-  
+
   return C_OK;
 }
 
@@ -205,7 +202,7 @@ void ffmpeg_decoder_dumpPave (parrot_video_encapsulation_t *PaVE)
   printf ("Header size  : %d (PaVE size : %u)\n", PaVE->header_size, sizeof (parrot_video_encapsulation_t));
   printf ("Payload size : %d\n", PaVE->payload_size);
   printf ("Frame Type / Number : %s : %d : slide %d/%d\n",
-     (PaVE->frame_type == FRAME_TYPE_P_FRAME) ? "P-Frame" : ((PaVE->frame_type == FRAME_TYPE_I_FRAME) ? "I-Frame" : "IDR-Frame"), 
+     (PaVE->frame_type == FRAME_TYPE_P_FRAME) ? "P-Frame" : ((PaVE->frame_type == FRAME_TYPE_I_FRAME) ? "I-Frame" : "IDR-Frame"),
      PaVE->frame_number,
      PaVE->slice_index+1,
      PaVE->total_slices);
@@ -214,7 +211,7 @@ void ffmpeg_decoder_dumpPave (parrot_video_encapsulation_t *PaVE)
 
 static inline bool_t check_and_copy_PaVE (parrot_video_encapsulation_t *PaVE, vp_api_io_data_t *data, parrot_video_encapsulation_t *prevPaVE, bool_t *dimChanged)
 {
-    
+
   parrot_video_encapsulation_t *localPaVE = (parrot_video_encapsulation_t *)data->buffers[data->indexBuffer];
   if (localPaVE->signature[0] == 'P' &&
       localPaVE->signature[1] == 'a' &&
@@ -223,9 +220,9 @@ static inline bool_t check_and_copy_PaVE (parrot_video_encapsulation_t *PaVE, vp
   {
       //FFMPEG_DEBUG("Found a PaVE");
       vp_os_memcpy (prevPaVE, PaVE, sizeof (parrot_video_encapsulation_t)); // Make a backup of previous PaVE so we can check if things have changed
-      
+
       vp_os_memcpy (PaVE, localPaVE, sizeof (parrot_video_encapsulation_t)); // Copy PaVE to our local one
-      
+
 #if __FFMPEG_DEBUG_ENABLED
       printf ("------------------------------------\n");
       printf ("PREV : ");
@@ -233,9 +230,9 @@ static inline bool_t check_and_copy_PaVE (parrot_video_encapsulation_t *PaVE, vp
       printf ("CURR : ");
       ffmpeg_decoder_dumpPave (PaVE);
       printf ("------------------------------------\n");
-      
-      
-      
+
+
+
 #endif
       if (prevPaVE->encoded_stream_width  != PaVE->encoded_stream_width   ||
           prevPaVE->encoded_stream_height != PaVE->encoded_stream_height  ||
@@ -257,7 +254,7 @@ static inline bool_t check_and_copy_PaVE (parrot_video_encapsulation_t *PaVE, vp
       return TRUE;
     }
   else
-    {    
+    {
       FFMPEG_DEBUG("No PaVE, signature was [%c][%c][%c][%c]",
                    localPaVE->signature[0],
                    localPaVE->signature[1],
@@ -288,73 +285,73 @@ C_RESULT ffmpeg_stage_decoding_transform(ffmpeg_stage_decoding_config_t *cfg, vp
   AVFrame	  *pFrameOutput = cfg->pFrameOutput;
   static AVPacket packet;
   int	frameFinished = 0;
-    
+
   bool_t frameDimChanged = FALSE;
     static parrot_video_encapsulation_t __attribute__ ((aligned (4))) PaVE;
     static parrot_video_encapsulation_t __attribute__ ((aligned (4))) prevPaVE;
-    
+
 #if WAIT_FOR_I_FRAME
   static bool_t waitForIFrame = TRUE;
 #endif
-    
+
 #ifdef NUM_SAMPLES
   static struct timeval start_time, start_time2;
   static int numsamples = 0;
 #endif
-    
+
   if (0 == in->size) // No frame
     {
       FFMPEG_DEBUG ("in->size is zero, don't do anything");
       return C_OK;
     }
-  
+
   vp_os_mutex_lock( &out->lock );
-  
+
   if(out->status == VP_API_STATUS_INIT) // Init only code
-    {		
+    {
       out->numBuffers   = 1;
       out->buffers      = cfg->bufferArray;
       out->buffers[0]   = NULL;
       out->indexBuffer  = 0;
       out->lineSize     = 0;
-        
+
       av_init_packet(&packet);
- 
-        
+
+
 #if __FFMPEG_DEBUG_ENABLED
 #else
       av_log_set_callback (&empty_av_log_callback);
 #endif
     }
- 
+
   if (! check_and_copy_PaVE(&PaVE, in, &prevPaVE, &frameDimChanged))
     {
       FFMPEG_DEBUG("Received a frame without PaVE informations");
       vp_os_mutex_unlock( &out->lock );
       return C_FAIL;
     }
-    
+
   if ((out->status == VP_API_STATUS_INIT) || frameDimChanged) // Init and "new frame dimensions" code
     {
       pCodecCtxMP4->width = PaVE.encoded_stream_width;
       pCodecCtxMP4->height = PaVE.encoded_stream_height;
       pCodecCtxH264->width = PaVE.encoded_stream_width;
       pCodecCtxH264->height = PaVE.encoded_stream_height;
-		
+
       cfg->src_picture.width = PaVE.display_width;
       cfg->src_picture.height = PaVE.display_height;
       cfg->src_picture.format = pCodecCtxH264->pix_fmt;
       cfg->dst_picture.width = PaVE.display_width;
       cfg->dst_picture.height = PaVE.display_height;
-		
+
       out->size = avpicture_get_size(cfg->dst_picture.format, cfg->dst_picture.width, cfg->dst_picture.height);
       cfg->buffer = (uint8_t *)av_realloc(cfg->buffer, out->size * sizeof(uint8_t));
       out->buffers[0] = cfg->buffer;
-		
+
       avpicture_fill((AVPicture *)pFrameOutput, (uint8_t*)out->buffers[out->indexBuffer], cfg->dst_picture.format,
                      cfg->dst_picture.width, cfg->dst_picture.height);
-		
-        
+
+
       cfg->img_convert_ctx = sws_getCachedContext(cfg->img_convert_ctx, PaVE.display_width, PaVE.display_height,
                                              pCodecCtxH264->pix_fmt, PaVE.display_width, PaVE.display_height,
                                              cfg->dst_picture.format, sws_flags, NULL, NULL, NULL);
@@ -363,22 +360,22 @@ C_RESULT ffmpeg_stage_decoding_transform(ffmpeg_stage_decoding_config_t *cfg, vp
         {
 #ifdef NUM_SAMPLES
           gettimeofday(&start_time, NULL);
-#endif		
+#endif
           out->status = VP_API_STATUS_PROCESSING;
           FFMPEG_DEBUG("End of init");
         }
     }
 
 #if	WAIT_FOR_I_FRAME
-  if ( (PaVE.frame_number != (prevPaVE.frame_number +1)) 
-        && 
+  if ( (PaVE.frame_number != (prevPaVE.frame_number +1))
+        &&
         ( PaVE.frame_number != prevPaVE.frame_number || PaVE.slice_index != (prevPaVE.slice_index+1) )   )
     {
       FFMPEG_DEBUG ("Missed a frame :\nPrevious was %d of type %d\nNew is %d of type %d", prevPaVE.frame_number, prevPaVE.frame_type,
                     PaVE.frame_number, PaVE.frame_type);
-      waitForIFrame = TRUE;  
+      waitForIFrame = TRUE;
     }
-    
+
 #if DISPLAY_DROPPED_FRAMES
   if (waitForIFrame && PaVE.frame_type == FRAME_TYPE_P_FRAME)
     {
@@ -386,21 +383,21 @@ C_RESULT ffmpeg_stage_decoding_transform(ffmpeg_stage_decoding_config_t *cfg, vp
       dropped_frames++;
     }
 #endif
-    
-    
+
+
   if(out->status == VP_API_STATUS_PROCESSING && (!waitForIFrame || (PaVE.frame_type == FRAME_TYPE_IDR_FRAME) || (PaVE.frame_type == FRAME_TYPE_I_FRAME))) // Processing code
     {
       waitForIFrame = FALSE;
 #else
-      if(out->status == VP_API_STATUS_PROCESSING) // Processing code  
+      if(out->status == VP_API_STATUS_PROCESSING) // Processing code
         {
 #endif
           /* The 'check_and_copy_PaVE' function already removed the PaVE from the 'in' buffer */
           packet.data = ((unsigned char*)in->buffers[in->indexBuffer]);
           packet.size = in->size;
           FFMPEG_DEBUG("Size : %d", packet.size);
-            
-        
+
+
 #ifdef NUM_SAMPLES
           struct timeval end_time;
           static float32_t frame_decoded_time = 0;
@@ -416,16 +413,16 @@ C_RESULT ffmpeg_stage_decoding_transform(ffmpeg_stage_decoding_config_t *cfg, vp
             {
               avcodec_decode_video2 (pCodecCtxH264, pFrame, &frameFinished, &packet);
             }
-        
+
           // Did we get a video frame?
           if(frameFinished)
             {
               pFrameOutput->data[0] = (uint8_t*)out->buffers[out->indexBuffer];
-              sws_scale(cfg->img_convert_ctx, (const uint8_t *const*)pFrame->data, 
-                        pFrame->linesize, 0, 
+              sws_scale(cfg->img_convert_ctx, (const uint8_t *const*)pFrame->data,
+                        pFrame->linesize, 0,
                         PaVE.display_height,
                         pFrameOutput->data, pFrameOutput->linesize);
-				
+
               cfg->num_picture_decoded++;
 
 #ifdef NUM_SAMPLES
@@ -435,12 +432,12 @@ C_RESULT ffmpeg_stage_decoding_transform(ffmpeg_stage_decoding_config_t *cfg, vp
               if(numsamples++ > NUM_SAMPLES)
                 {
                   float32_t value = ((end_time.tv_sec * 1000.0 + end_time.tv_usec / 1000.0) - (start_time.tv_sec * 1000.0 + start_time.tv_usec / 1000.0));
-					
+
                   printf("Frames decoded in average %f fps, received and decoded in average %f fps\n", (1000.0 / (frame_decoded_time / (float32_t)NUM_SAMPLES)), 1000.0 / (value / (float32_t)NUM_SAMPLES));
                   gettimeofday(&start_time, NULL);
                   frame_decoded_time = 0;
                   numsamples = 0;
-                }					
+                }
 #endif
             }
           else
@@ -452,7 +449,7 @@ C_RESULT ffmpeg_stage_decoding_transform(ffmpeg_stage_decoding_config_t *cfg, vp
         	  if (7!=PaVE.payload_size)
               printf ("Decoding failed for a %s\n", (PaVE.frame_type == FRAME_TYPE_P_FRAME) ? "P Frame" : "I Frame");
             }
-        
+
 #if DISPLAY_DROPPED_FRAMES
           if ((PaVE.frame_type == FRAME_TYPE_IDR_FRAME) || (PaVE.frame_type == FRAME_TYPE_I_FRAME))
             {
@@ -477,11 +474,11 @@ C_RESULT ffmpeg_stage_decoding_transform(ffmpeg_stage_decoding_config_t *cfg, vp
               previous_ok_frame = PaVE.frame_number;
             }
 #endif
-        
+
 	}
-	
+
       vp_os_mutex_unlock( &out->lock );
-	
+
       return C_OK;
     }
 
@@ -505,7 +502,7 @@ C_RESULT ffmpeg_stage_decoding_transform(ffmpeg_stage_decoding_config_t *cfg, vp
           pointer = NULL;                                               \
         }                                                               \
     } while (0)
-  
+
 
   C_RESULT ffmpeg_stage_decoding_close(ffmpeg_stage_decoding_config_t *cfg)
   {

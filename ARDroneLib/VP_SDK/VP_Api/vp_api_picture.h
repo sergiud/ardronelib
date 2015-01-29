@@ -14,6 +14,7 @@
 #include <VP_Os/vp_os_types.h>
 #ifdef FFMPEG_SUPPORT
 #include <libavutil/avutil.h>
+#include <libavutil/pixfmt.h>
 #else
 /**
  * Pixel format. Notes:
@@ -157,7 +158,7 @@ typedef struct _ATTRIBUTE_PACKED_ _vp_api_picture_
   uint32_t         vision_complete;
   uint32_t         complete;
   int32_t          blockline;
-  
+
   #ifdef USE_ELINUX
   uint32_t acquisition_timestamp;
   uint32_t scale;
