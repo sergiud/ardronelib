@@ -100,9 +100,9 @@ C_RESULT vp_com_serial_open(vp_com_serial_config_t* config, vp_com_connection_t*
   VP_OS_ASSERT(config->blocking == 0 || config->blocking == 1);
 
   if(config->blocking == 0)
-    socket->priv = (void *)open(&config->itfName[0], O_RDWR|O_NOCTTY|O_NONBLOCK);
+    socket->priv = open(&config->itfName[0], O_RDWR|O_NOCTTY|O_NONBLOCK);
   else
-    socket->priv = (void *)open(&config->itfName[0], O_RDWR|O_NOCTTY);
+    socket->priv = open(&config->itfName[0], O_RDWR|O_NOCTTY);
 
   if(((int)socket->priv) == -1)
     {
@@ -111,10 +111,10 @@ C_RESULT vp_com_serial_open(vp_com_serial_config_t* config, vp_com_connection_t*
     }
 
   /* get current serial port settings */
-  if(tcgetattr((int)socket->priv, &tio) != 0)
+  if(tcgetattr(socket->priv, &tio) != 0)
     {
       PRINT("Serial device configuration failure (%s)", strerror(errno));
-      close((int)socket->priv);
+      close(socket->priv);
       return (VP_COM_ERROR);
     }
 
@@ -128,10 +128,10 @@ C_RESULT vp_com_serial_open(vp_com_serial_config_t* config, vp_com_connection_t*
       cfsetospeed(&tio, speed);
       cfmakeraw(&tio);
 
-      if(tcsetattr((int)socket->priv, TCSANOW, &tio) != 0)
+      if(tcsetattr(socket->priv, TCSANOW, &tio) != 0)
 	{
 	  PRINT("Serial device configuration failure (%s)", strerror(errno));
-	  close((int)socket->priv);
+	  close(socket->priv);
 	  return (VP_COM_ERROR);
 	}
 
@@ -155,7 +155,7 @@ C_RESULT vp_com_serial_open(vp_com_serial_config_t* config, vp_com_connection_t*
   cfsetospeed(&tio, speed);
   cfmakeraw(&tio);
 
-  if(tcsetattr((int)socket->priv, TCSANOW, &tio) != 0)
+  if(tcsetattr(socket->priv, TCSANOW, &tio) != 0)
     {
       PRINT("Serial device configuration failure (%s)", strerror(errno));
       close((int)socket->priv);

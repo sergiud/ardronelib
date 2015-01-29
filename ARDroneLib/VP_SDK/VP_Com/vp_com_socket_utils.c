@@ -28,7 +28,7 @@ int32_t vp_com_fill_read_fs(vp_com_socket_t* sockets, int32_t num_sockets, int32
   {
     if( !sockets->is_disable )
     {
-      int32_t s = (int32_t) sockets->priv;
+      int s = sockets->priv;
 
       FD_SET( s, read_fs); // add the socket
 
@@ -45,14 +45,14 @@ int32_t vp_com_fill_read_fs(vp_com_socket_t* sockets, int32_t num_sockets, int32
 
 void vp_com_close_client_sockets(vp_com_socket_t* client_sockets, int32_t num_client_sockets)
 {
-  int32_t s;
+  int s;
 
   // Select timed out - We close all sockets because it should mean we lost connection with client
   while( num_client_sockets > 0 )
   {
     if( !client_sockets->is_disable )
     {
-      s = (int32_t) client_sockets->priv;
+      s = client_sockets->priv;
 
       DEBUG_PRINT_SDK("[VP_COM_SERVER] Closing socket %d\n", (int)s);
 
@@ -81,7 +81,7 @@ C_RESULT vp_com_client_open_socket(vp_com_socket_t* server_socket, vp_com_socket
   struct sockaddr_in raddr = { 0 }; // remote address
 
   socklen_t l = sizeof(raddr);
-  int32_t s = (int32_t) server_socket->priv;
+  int s = server_socket->priv;
 
   Write write = (Write) (server_socket->protocol == VP_COM_TCP ? vp_com_write_socket : vp_com_write_udp_socket);
 
@@ -94,7 +94,7 @@ C_RESULT vp_com_client_open_socket(vp_com_socket_t* server_socket, vp_com_socket
   {
     if( server_socket->protocol == VP_COM_TCP )
     {
-      client_socket->priv = (void*)accept( s, (struct sockaddr*)&raddr, &l );
+      client_socket->priv = accept( s, (struct sockaddr*)&raddr, &l );
       /* Warn the socket manager that the client is now connected. */
       res = server_socket->select( server_socket, client_socket, VP_COM_SOCKET_SELECT_CONNECTED, write );
     }
@@ -120,9 +120,9 @@ void vp_com_client_receive( vp_com_socket_t *client_socket )
 
   struct sockaddr_in from;
   socklen_t fromlen;
-  int32_t s, received,available;
+  int s, received,available;
 
-  s = (int32_t) client_socket->priv;
+  s = client_socket->priv;
 
   fromlen = sizeof(from);
 

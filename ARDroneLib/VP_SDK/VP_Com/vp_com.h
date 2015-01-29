@@ -218,7 +218,7 @@ typedef struct _vp_com_socket_t
   uint32_t                  multicast_base_addr;              /// base address used to compute multicast address to use
 
   /// Private data
-  void*                     priv;                             /// socket number
+  int                       priv;                             /// socket number
   VP_COM_SOCKET_STATE       is_disable;                       /// tells if the socket is enable or not
   struct _vp_com_socket_t*  server;                           /// Param only used when socket is client
   uint32_t                  queue_length;                     /// only for server socket

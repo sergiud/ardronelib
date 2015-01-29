@@ -148,18 +148,18 @@ C_RESULT video_com_stage_connect (video_com_config_t *cfg)
           int numi= 1;
           socklen_t numi1= sizeof(int);
 #ifdef _WIN32
-          setsockopt((int32_t)cfg->socket.priv, SOL_SOCKET, SO_RCVTIMEO, SSOPTCAST_RO(&timeout_for_windows), sizeof(timeout_for_windows));
+          setsockopt(cfg->socket.priv, SOL_SOCKET, SO_RCVTIMEO, SSOPTCAST_RO(&timeout_for_windows), sizeof(timeout_for_windows));
 #else
-          setsockopt((int32_t)cfg->socket.priv, SOL_SOCKET, SO_RCVTIMEO, SSOPTCAST_RO(&tv), sizeof(tv));
+          setsockopt(cfg->socket.priv, SOL_SOCKET, SO_RCVTIMEO, SSOPTCAST_RO(&tv), sizeof(tv));
 #endif		
           // Increase buffer for receiving datas.
-          setsockopt( (int32_t)cfg->socket.priv, SOL_SOCKET, SO_DEBUG, SSOPTCAST_RO(&numi), sizeof(numi));
+          setsockopt(cfg->socket.priv, SOL_SOCKET, SO_DEBUG, SSOPTCAST_RO(&numi), sizeof(numi));
           numi = SOCKET_BUFFER_SIZE;
-          setsockopt( (int32_t)cfg->socket.priv, SOL_SOCKET, SO_RCVBUF, SSOPTCAST_RO(&numi),numi1);
-          getsockopt( (int32_t)cfg->socket.priv, SOL_SOCKET, SO_RCVBUF, SSOPTCAST_RW(&numi),&numi1);
+          setsockopt(cfg->socket.priv, SOL_SOCKET, SO_RCVBUF, SSOPTCAST_RO(&numi),numi1);
+          getsockopt(cfg->socket.priv, SOL_SOCKET, SO_RCVBUF, SSOPTCAST_RW(&numi),&numi1);
           PDBG ("New buffer size : %d", numi);
           numi1 = 0;
-          setsockopt( (int32_t)cfg->socket.priv, SOL_SOCKET, SO_DEBUG, SSOPTCAST_RO(&numi1), sizeof(numi1));
+          setsockopt(cfg->socket.priv, SOL_SOCKET, SO_DEBUG, SSOPTCAST_RO(&numi1), sizeof(numi1));
           cfg->connected = TRUE;
     	}
     }
@@ -175,18 +175,18 @@ C_RESULT video_com_stage_connect (video_com_config_t *cfg)
           PDBG ("Success open");
           vp_com_sockopt(cfg->com, &cfg->socket, cfg->sockopt);
 #ifdef _WIN32
-          setsockopt((int32_t)cfg->socket.priv, SOL_SOCKET, SO_RCVTIMEO, SSOPTCAST_RO(&timeout_for_windows), sizeof(timeout_for_windows));
+          setsockopt(cfg->socket.priv, SOL_SOCKET, SO_RCVTIMEO, SSOPTCAST_RO(&timeout_for_windows), sizeof(timeout_for_windows));
 #else
-          setsockopt((int32_t)cfg->socket.priv, SOL_SOCKET, SO_RCVTIMEO, SSOPTCAST_RO(&tv), sizeof(tv));
+          setsockopt(cfg->socket.priv, SOL_SOCKET, SO_RCVTIMEO, SSOPTCAST_RO(&tv), sizeof(tv));
 #endif		
           // Increase buffer for receiving datas.
-          setsockopt( (int32_t)cfg->socket.priv, SOL_SOCKET, SO_DEBUG, SSOPTCAST_RO(&numi), sizeof(numi));
+          setsockopt(cfg->socket.priv, SOL_SOCKET, SO_DEBUG, SSOPTCAST_RO(&numi), sizeof(numi));
           numi = SOCKET_BUFFER_SIZE;
-          setsockopt( (int32_t)cfg->socket.priv, SOL_SOCKET, SO_RCVBUF, SSOPTCAST_RO(&numi),numi1);
-          getsockopt( (int32_t)cfg->socket.priv, SOL_SOCKET, SO_RCVBUF, SSOPTCAST_RW(&numi),&numi1);
+          setsockopt(cfg->socket.priv, SOL_SOCKET, SO_RCVBUF, SSOPTCAST_RO(&numi),numi1);
+          getsockopt(cfg->socket.priv, SOL_SOCKET, SO_RCVBUF, SSOPTCAST_RW(&numi),&numi1);
           PDBG ("NEW buffer size : %d", numi);
           numi1 = 0;
-          setsockopt( (int32_t)cfg->socket.priv, SOL_SOCKET, SO_DEBUG, SSOPTCAST_RO(&numi1), sizeof(numi1));
+          setsockopt(cfg->socket.priv, SOL_SOCKET, SO_DEBUG, SSOPTCAST_RO(&numi1), sizeof(numi1));
           cfg->connected = TRUE;
     	}
     }
@@ -426,7 +426,7 @@ C_RESULT video_com_multisocket_stage_transform(video_com_multisocket_config_t *c
       maxfs=0;
       for (i=0;i<cfg->nb_sockets;i++) {
         if(cfg->configs[i]->connected) {
-          fs = (int)cfg->configs[i]->socket.priv;
+          fs = cfg->configs[i]->socket.priv;
 
           if (fs>maxfs) maxfs=fs;
           FD_SET(fs,&rfds);
@@ -443,7 +443,7 @@ C_RESULT video_com_multisocket_stage_transform(video_com_multisocket_config_t *c
           if (cfg->last_active_socket!=-1)
             {
               i=cfg->last_active_socket;
-              fs = (int)cfg->configs[i]->socket.priv;
+              fs = cfg->configs[i]->socket.priv;
               if (cfg->configs[i]->read && FD_ISSET(fs, &rfds))
                 {
                   out->size = cfg->configs[i]->buffer_size;

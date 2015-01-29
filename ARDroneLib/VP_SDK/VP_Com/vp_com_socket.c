@@ -128,7 +128,7 @@ C_RESULT vp_com_open_socket(vp_com_socket_t* sck, Read* read, Write* write)
 
   if(res == VP_COM_OK)
   {
-    sck->priv = (void*) s;
+    sck->priv = s;
 
     switch( sck->protocol )
     {
@@ -171,7 +171,7 @@ C_RESULT vp_com_close_socket(vp_com_socket_t* socket)
   // shutdown( (int) socket->priv, SHUT_RDWR );
   close( (int) socket->priv );
 
-  socket->priv = NULL;
+  socket->priv = 0;
 
   return VP_COM_OK;
 }
@@ -198,7 +198,7 @@ C_RESULT vp_com_wait_socket(vp_com_socket_t* server, vp_com_socket_t* client, in
   if(SUCCEED( res ))
   {
     vp_os_memcpy( client, server, sizeof(vp_com_socket_t) );
-    client->priv = (void*) c;
+    client->priv = c;
   }
 
   return res;
@@ -654,7 +654,7 @@ DEFINE_THREAD_ROUTINE_STACK( vp_com_server, thread_params, VP_COM_THREAD_SERVER_
           rc --;
 
           // Recycle previously released sockets
-          for( ncs = 0; ncs < num_client_sockets && client_sockets[ncs].priv != NULL; ncs++ );
+          for( ncs = 0; ncs < num_client_sockets && client_sockets[ncs].priv != 0; ncs++ );
 
           if( ncs < VP_COM_THREAD_NUM_MAX_CLIENTS)
           {
