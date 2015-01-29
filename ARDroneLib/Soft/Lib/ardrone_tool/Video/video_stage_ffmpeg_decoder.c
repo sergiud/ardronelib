@@ -165,8 +165,8 @@ C_RESULT ffmpeg_stage_decoding_open(ffmpeg_stage_decoding_config_t *cfg)
       return C_FAIL;
     }
 
-  cfg->pFrameOutput = avcodec_alloc_frame();
-  cfg->pFrame = avcodec_alloc_frame();
+  cfg->pFrameOutput = av_frame_alloc();
+  cfg->pFrame = av_frame_alloc();
   if (NULL == cfg->pFrameOutput || NULL == cfg->pFrame)
     {
       fprintf (stderr, "Unable to alloc frames");
